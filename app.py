@@ -18,7 +18,9 @@ import matplotlib.colors as mcolors
 
 
 # Load UMAP data from CSV
-data_path = 'umap-BirdNet-app.csv'
+# data_path = 'umap-BirdNet-app.csv'
+data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
+
 df = pd.read_csv(data_path)
 
 # Assign each unique bird_id a color
