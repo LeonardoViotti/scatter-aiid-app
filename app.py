@@ -62,6 +62,8 @@ fig.update_layout(
     height=None,
 )
 app = Dash()
+server = app.server
+
 
 app.layout = html.Div([
     dcc.Graph(id="graph-basic", figure=fig, clear_on_unhover=True, 
