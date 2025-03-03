@@ -1,4 +1,4 @@
-""" 
+""""" 
 Iteractive scatter plot to inspect spectrograms
 
 python app/scatter-interactive.py
@@ -8,23 +8,30 @@ References:
 
 """
 
-
 from dash import Dash, dcc, html, Input, Output, no_update, callback
 import plotly.graph_objects as go
-import pandas as pd
+import csv
 import os
-# import plotly.express as px
 import matplotlib.colors as mcolors
-
+from collections import defaultdict
 
 # Load UMAP data from CSV
-# data_path = 'umap-BirdNet-app.csv'
-data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
+data_path = 'umap-BirdNet-app.csv'
+# data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
 
-df = pd.read_csv(data_path)
+data = []
+bird_ids = set()
+
+with open(data_path, newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        row["x"] = float(row["x"])
+        row["y"] = float(row["y"])
+        data.append(row)
+        bird_ids.add(row["bird_id"])
 
 # Assign each unique bird_id a color
-unique_birds = df["bird_id"].unique()
+unique_birds = list(bird_ids)
 
 # Get a list of XKCD colors from matplotlib
 xkcd_colors = list(mcolors.XKCD_COLORS.values())
@@ -32,21 +39,22 @@ xkcd_colors = list(mcolors.XKCD_COLORS.values())
 # Assign each bird_id a unique XKCD color
 color_map = {bird: xkcd_colors[i % len(xkcd_colors)] for i, bird in enumerate(unique_birds)}
 
-# Map colors to the bird_id column
-df["color"] = df["bird_id"].map(color_map)
+data_by_bird = defaultdict(list)
+for row in data:
+    row["color"] = color_map[row["bird_id"]]
+    data_by_bird[row["bird_id"]].append(row)
 
 # Create scatter plot with categorical colors
 fig = go.Figure()
 
 # Create a separate scatter trace for each bird_id
-for bird_id in unique_birds:
-    bird_df = df[df["bird_id"] == bird_id]
+for bird_id, bird_data in data_by_bird.items():
     fig.add_trace(go.Scatter(
-        x=bird_df["x"],
-        y=bird_df["y"],
+        x=[row["x"] for row in bird_data],
+        y=[row["y"] for row in bird_data],
         mode="markers",
         name=bird_id,  # Legend entry
-        text=bird_df["img_idx"],
+        text=[row["img_idx"] for row in bird_data],
         marker=dict(
             color=color_map[bird_id],
             size=10,
@@ -77,7 +85,6 @@ app.layout = html.Div([
     Output("graph-tooltip", "children"),
     Input("graph-basic", "hoverData"),
 )
-
 def display_hover(hoverData):
     if hoverData is None:
         return False, no_update, no_update
@@ -86,7 +93,7 @@ def display_hover(hoverData):
     bbox = pt["bbox"]
     num = pt["pointNumber"]
 
-    df_row = df.iloc[num]
+    df_row = data[num]
     img_path = df_row['img_path']
     img_idx = df_row['img_idx']
 
@@ -96,7 +103,6 @@ def display_hover(hoverData):
     # Shift tooltip left by 50 pixels (adjust as needed)
     bbox["x0"] += 150
     bbox["x1"] += 130
-    
     
     children = [
         html.Div([
