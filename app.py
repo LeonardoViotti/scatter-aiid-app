@@ -12,15 +12,16 @@ from dash import Dash, dcc, html, Input, Output, no_update, callback
 import plotly.graph_objects as go
 import csv
 import os
-import matplotlib.colors as mcolors
+# import matplotlib.colors as mcolors
+import plotly.express as px
 from collections import defaultdict
 
 # Configuration
 FROM_URL = True  # If True, use URLs from 'img_url' column instead of local file paths
 
 # Load UMAP data from CSV
-# data_path = 'umap-BirdNet-app.csv'
-data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
+data_path = './umap-BirdNet-app.csv'
+# data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
 
 data = []
 bird_ids = set()
@@ -37,10 +38,15 @@ with open(data_path, newline='', encoding='utf-8') as csvfile:
 unique_birds = list(bird_ids)
 
 # Get a list of XKCD colors from matplotlib
-xkcd_colors = list(mcolors.XKCD_COLORS.values())
+# xkcd_colors = list(mcolors.XKCD_COLORS.values())
 
-# Assign each bird_id a unique XKCD color
-color_map = {bird: xkcd_colors[i % len(xkcd_colors)] for i, bird in enumerate(unique_birds)}
+# # Assign each bird_id a unique XKCD color
+# color_map = {bird: xkcd_colors[i % len(xkcd_colors)] for i, bird in enumerate(unique_birds)}
+
+high_contrast_colors = px.colors.qualitative.Dark24  # Other options: Plotly, Set3, Bold
+
+# Assign each bird_id a unique color from the palette
+color_map = {bird: high_contrast_colors[i % len(high_contrast_colors)] for i, bird in enumerate(unique_birds)}
 
 data_by_bird = defaultdict(list)
 for row in data:
@@ -69,11 +75,24 @@ for bird_id, bird_data in data_by_bird.items():
 fig.update_layout(
     xaxis=dict(title='UMAP Dimension 1'),
     yaxis=dict(title='UMAP Dimension 2'),
-    legend=dict(title="Bird Species"),  # Legend title
+    legend=dict(
+        title=dict(
+            text="Bird ID<br><span style='font-size:12px;'>(double click to select a single bird)</span>",
+            side="top"  # Places the legend title above the entries
+        ),
+        orientation="h",  # Horizontal legend
+        yanchor="bottom",
+        y=-0.3,  # Moves legend entries below the plot
+        xanchor="center",
+        x=0.5,
+        # tracegroupgap=15,  # Space between groups
+        itemwidth=30  # Forces text wrapping into multiple lines
+    ),
     plot_bgcolor='rgba(255,255,255,0.1)',
     autosize=True,
     height=None,
 )
+
 app = Dash()
 
 app.layout = html.Div([
@@ -108,28 +127,37 @@ def display_hover(hoverData):
     bbox["x1"] += 130
     
     children = [
-        html.Div([
-            html.Img(
-                src=img_path if FROM_URL else app.get_asset_url(os.path.basename(img_path)), 
-                style={"width": "500px", "height": "auto"}
-            ),
-            html.H5(
-                f"{img_idx}", 
-                style={
-                    "text-align": "center", 
-                    "font-family": "Arial",
-                    "overflow-wrap": "break-word",
-                    "margin-top": "10px"
-                }
-            ),
-        ], style={
-            "width": "200px", 
-            "white-space": "normal", 
-            "display": "flex", 
-            "flex-direction": "column", 
-            "align-items": "center"
-        })
-    ]
+    html.Div([
+        html.Img(
+            src=img_path if FROM_URL else app.get_asset_url(os.path.basename(img_path)), 
+            style={"width": "500px", "height": "auto"}
+        ),
+        html.P(
+            f"{img_idx}", 
+            style={
+                "text-align": "center", 
+                "font-family": "Arial",
+                "overflow-wrap": "break-word",
+                "margin-top": "10px"
+            }
+        ),
+        html.P(
+            f"Bird ID: {df_row['bird_id']}", 
+            style={
+                "text-align": "center", 
+                "font-family": "Arial",
+                "overflow-wrap": "break-word",
+                "margin-top": "10px"
+            }
+        )
+    ], style={
+        "width": "200px", 
+        "white-space": "normal", 
+        "display": "flex", 
+        "flex-direction": "column", 
+        "align-items": "center"
+    })
+]
 
     return True, bbox, children
 
