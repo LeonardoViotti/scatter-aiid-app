@@ -19,8 +19,8 @@ from collections import defaultdict
 FROM_URL = True  # If True, use URLs from 'img_url' column instead of local file paths
 
 # Load UMAP data from CSV
-data_path = 'umap-BirdNet-app.csv'
-# data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
+# data_path = 'umap-BirdNet-app.csv'
+data_path = '/home/lviotti/scatter-aiid-app/umap-BirdNet-app.csv'
 
 data = []
 bird_ids = set()
