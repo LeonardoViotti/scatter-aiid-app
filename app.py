@@ -1,4 +1,4 @@
-""""" 
+""" 
 Iteractive scatter plot to inspect spectrograms
 
 python app/scatter-interactive.py
@@ -14,6 +14,9 @@ import csv
 import os
 import matplotlib.colors as mcolors
 from collections import defaultdict
+
+# Configuration
+FROM_URL = True  # If True, use URLs from 'img_url' column instead of local file paths
 
 # Load UMAP data from CSV
 data_path = 'umap-BirdNet-app.csv'
@@ -94,10 +97,10 @@ def display_hover(hoverData):
     num = pt["pointNumber"]
 
     df_row = data[num]
-    img_path = df_row['img_path']
+    img_path = df_row['img_url'] if FROM_URL else df_row['img_path']
     img_idx = df_row['img_idx']
 
-    if not os.path.exists(img_path):
+    if not FROM_URL and not os.path.exists(img_path):
         return False, no_update, no_update  # Hide tooltip if image is missing
     
     # Shift tooltip left by 50 pixels (adjust as needed)
@@ -107,7 +110,7 @@ def display_hover(hoverData):
     children = [
         html.Div([
             html.Img(
-                src=app.get_asset_url(os.path.basename(img_path)), 
+                src=img_path if FROM_URL else app.get_asset_url(os.path.basename(img_path)), 
                 style={"width": "500px", "height": "auto"}
             ),
             html.H5(
